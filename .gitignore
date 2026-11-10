@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.idea/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db
+*.log
+docs/*-result.json
+docs/*-browser*.json
+docs/*-live*.json
+docs/*-evaluation*.json
+docs/pending-import-audit.json
+docs/ui-browser*.json

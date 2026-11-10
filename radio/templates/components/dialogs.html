@@ -1,0 +1,39 @@
+<dialog id="import-dialog" class="gold-frame">
+  <div class="dialog-header"><h2>Import community music</h2><button type="button" data-close="import-dialog" class="close-button" aria-label="Close import">×</button></div>
+  <p>Copy posts from Crucible’s #ai-music channel and paste them below. We’ll keep the original messages and check for songs already in your catalog.</p>
+  <form id="import-form"><label for="discord-text">Copied Discord messages</label><textarea id="discord-text" rows="9" maxlength="100000" required placeholder="Paste the copied posts, including their names, dates, and Suno links…"></textarea><p id="import-status" role="status"></p><div class="form-actions"><button type="button" data-close="import-dialog">Cancel</button><button id="import-button" type="submit" class="button-green">Import music</button></div></form>
+</dialog>
+<dialog id="policies-dialog" class="gold-frame">
+  <div class="dialog-header"><div><h2>Station policies</h2><p class="dialog-subtitle">Your approved policies guide ordinary radio programming.</p></div><button type="button" data-close="policies-dialog" class="close-button" aria-label="Close policies">×</button></div>
+  <p id="policies-note" class="quiet">New policies and revisions are discussed with your host in chat. Proposals appear here for your review.</p>
+  <div id="policy-list" class="policy-list" aria-live="polite"></div>
+  <div class="form-actions"><button id="add-policy" type="button" class="button-green">Discuss a new policy with your host</button><button type="button" data-close="policies-dialog">Close</button></div>
+</dialog>
+<dialog id="catalog-dialog" class="gold-frame">
+  <div class="dialog-header"><h2>Your music catalog</h2><button type="button" data-close="catalog-dialog" class="close-button" aria-label="Close catalog">×</button></div>
+  <p id="catalog-review-note">Review songs and artist names. Changes are saved to your local catalog.</p>
+  <div class="catalog-layout"><div class="catalog-browser">
+    <section id="import-review" class="import-review" hidden aria-label="Import results needing attention">
+      <h3 id="import-review-heading">Needs attention</h3>
+      <label for="import-review-batch">Import batch</label><select id="import-review-batch"></select>
+      <div id="import-review-list" class="catalog-list" aria-label="Unresolved import results"></div>
+      <div class="catalog-pagination"><button id="import-review-prev">← Previous</button><span id="import-review-page"></span><button id="import-review-next">Next →</button></div>
+    </section>
+    <h3 class="catalog-section-title">Imported songs</h3><label class="sr-only" for="catalog-search">Search imported songs by title or artist</label><input id="catalog-search" type="search" maxlength="200" placeholder="Search songs or artists…" autocomplete="off"><div id="catalog-list" class="catalog-list" aria-label="Songs"></div><div class="catalog-pagination"><button id="catalog-prev">← Previous</button><span id="catalog-page" aria-live="polite"></span><button id="catalog-next">Next →</button></div>
+    <details id="youtube-catalog" hidden><summary id="youtube-count">YouTube submissions</summary><div id="youtube-list" class="catalog-list"></div><button type="button" id="youtube-more" hidden>Load more</button></details></div>
+    <div class="catalog-editor">
+      <p id="editor-empty" class="quiet">Choose a song to review its details.</p>
+      <section id="import-entry-detail" hidden aria-label="Unresolved import details"></section>
+      <form id="song-form" hidden><h3 id="editor-heading">Song details</h3><div class="song-queue-tools"><img id="song-artwork" class="song-artwork" alt="Song artwork" hidden><span id="song-artwork-placeholder" class="song-artwork-placeholder" hidden>♫</span><div class="song-queue-actions"><button id="queue-song-next" type="button">Play next</button><button id="queue-song-append" type="button">Append to queue</button><p id="queue-song-status" class="field-note" role="status"></p></div></div><p id="song-artwork-note" class="field-note" hidden>Song artwork from Suno.</p><p id="song-field-review-note" class="review-notice" hidden>Highlighted fields need attention or have unavailable information. The notes explain each one.</p><label for="song-title">Display title</label><input id="song-title" name="title">
+        <label for="artist-select">Artist association</label><select id="artist-select"></select><button type="button" id="more-artists" class="text-button" hidden>Load more artists</button>
+        <label for="artist-name">Preferred artist name</label><input id="artist-name"><div id="existing-artist-match" class="review-notice" hidden><p id="existing-artist-note"></p><button type="button" id="use-existing-artist">Use existing artist</button></div><label for="artist-aliases">Artist aliases <span class="quiet">(one per line)</span></label><textarea id="artist-aliases" rows="2"></textarea><p class="field-note">Artist names and aliases apply to all of that artist’s songs.</p>
+        <label for="song-style">Style information</label><textarea id="song-style" rows="2"></textarea>
+        <details><summary>Lyrics and Suno creator</summary><label for="song-lyrics">Lyrics</label><textarea id="song-lyrics" rows="5"></textarea><label for="suno-username">Suno username</label><input id="suno-username"><p class="field-note">Suno attribution is separate from the preferred artist name.</p></details>
+        <section id="editor-stats" class="read-only-stats" aria-label="Calculated playback statistics"></section>
+      </form>
+    </div>
+  </div>
+  <p id="save-status" role="status"></p>
+  <div class="form-actions"><button type="button" data-close="catalog-dialog">Close</button><button id="save-song" type="submit" form="song-form" class="button-green" hidden>Save changes</button><button id="review-catalog" class="button-green">Confirm catalog review</button></div>
+</dialog>
+<div id="connection-help" hidden>Connect your ChatGPT account. Sign-in is handled by Codex; Kern Radio never asks for your password.</div>

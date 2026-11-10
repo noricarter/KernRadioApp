@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071e1d">
+<title>Kern Radio — Musical Treasures</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="viewport" aria-label="Kern Radio broadcast display">
+  <div id="scene" class="scene">
+    <!-- Every illustrated layer is a standalone transparent asset; none is a flattened UI screenshot. -->
+    <img class="background" src="assets/background.png" alt="" aria-hidden="true">
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="center-haze" aria-hidden="true"></div>
+    <img class="canopy" src="assets/canopy.png" alt="" aria-hidden="true">
+    <div class="fireflies" id="fireflies" aria-hidden="true"></div>
+    <section class="now-playing" aria-label="Now playing">
+      <div class="cover" id="cover">
+        <div class="album-art" id="albumArt" aria-label="Album cover unavailable"></div>
+        <img class="album-frame" src="assets/album-frame.png" alt="" aria-hidden="true">
+      </div>
+      <div class="metadata">
+        <p class="on-air"><span class="on-dot"></span><span id="broadcastStatus">OFF AIR</span><span class="on-spark">✦</span></p>
+        <h1 id="trackTitle">Kern Radio</h1>
+        <p class="artist" id="artistName">Ready for an adventure</p>
+        <div class="equalizer" id="equalizer" aria-hidden="true"></div>
+        <p class="brand">KERN RADIO <span>•</span> MUSICAL TREASURES</p>
+      </div>
+    </section>
+    <img class="beam" src="assets/wood-beam.png" alt="" aria-hidden="true">
+    <section class="commentary" aria-label="Explorer commentary">
+      <img class="paper" src="assets/parchment.png" alt="" aria-hidden="true">
+      <p id="commentText" role="status" aria-live="polite">Your host will be here when programming begins.</p>
+    </section>
+    <img class="rock" src="assets/rock.png" alt="" aria-hidden="true">
+    <img class="mascot" id="hostMascot" src="assets/mascot_standard.png" data-mascot="standard" alt="Our expedition guide — standard expression" />
+    <img class="right-flowers" src="assets/right-flowers.png" alt="" aria-hidden="true">
+    <aside class="rail" aria-label="Track list">
+      <img class="rail-body" src="assets/rail.png" alt="" aria-hidden="true">
+      <img class="rail-heading" src="assets/rail-heading.png" alt="Track List">
+      <div class="queue" id="queue"></div>
+    </aside>
+  </div>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

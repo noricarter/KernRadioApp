@@ -1,0 +1,15 @@
+<section class="chat" aria-label="Conversation with your radio host">
+  <div class="chat-connection"><span id="connection-label">Connecting to your host…</span><button id="reconnect" class="text-button" hidden>Reconnect</button></div>
+  <div id="conversation" class="conversation" role="log" aria-label="Conversation history" aria-live="polite">
+    <div id="messages"></div>
+    <div id="import-card"></div>
+  </div>
+  <div id="processing" class="processing" role="status" hidden><span class="thinking-dots">● ● ●</span><span id="processing-text">Your host is thinking…</span></div>
+  <p id="error" class="error" role="alert"></p>
+  <form id="composer" class="composer">
+    <button id="open-import" type="button" class="add-button" aria-label="Import music from Discord" title="Import music">＋</button>
+    <label class="sr-only" for="message">Message your radio host</label>
+    <textarea id="message" maxlength="16000" rows="1" placeholder="Message your radio host…" required></textarea>
+    <button id="send" class="send-button" type="submit" aria-label="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 18-7-7 18-3-8-8-3Z"/><path d="m11 13 10-10"/></svg></button>
+  </form>
+</section>

@@ -1,0 +1,1 @@
+"""Community Radio application composition."""

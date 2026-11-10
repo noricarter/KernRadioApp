@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="app-token" content="{{ token }}">
+  <title>Kern Radio</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script type="module" src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+{% include 'components/header.html' %}
+<main class="workspace">
+  <section class="conversation-stage gold-frame" aria-label="Radio host and conversation">
+    <aside class="host" aria-label="Your radio host">
+      <img class="host-mascot" src="{{ url_for('mascot') }}" alt="Your cheerful explorer radio host">
+    </aside>
+    {% include 'components/conversation.html' %}
+  </section>
+  {% include 'components/context.html' %}
+</main>
+{% include 'components/dialogs.html' %}
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
