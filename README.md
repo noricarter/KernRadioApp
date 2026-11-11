@@ -1,4 +1,4 @@
-# Community Radio foundation
+# Kern Radio
 
 A local Flask application assembled from reusable configuration, web hosting,
 and Codex services. It provides guided ChatGPT connection, a basic agent chat,
@@ -9,50 +9,29 @@ through the illustrated frontend, with brief animated host dialogue and graceful
 
 ## Fresh install
 
-The application requires Git, uv, and the official Codex CLI (`codex` must be
-on PATH). uv can install the required Python 3.13 runtime, so a separate Python
-installation is optional. The Codex integration was verified with CLI 0.166.0.
+The application requires the official Codex CLI. The Windows launcher below
+installs Codex CLI, uv, Python 3.13, and the app packages. On macOS and Linux,
+install uv and Codex CLI separately as described below. No API key is needed.
 
-On Windows, open **Windows Terminal** and choose its **PowerShell** tab. Keep
-that window open while installing: the installer can close a PowerShell session
-if it encounters an error. These commands run the installers in a child
-PowerShell window that stays open and returns to a prompt, so an error remains
-visible:
+On Windows 10 or 11, download the [Kern Radio ZIP](https://github.com/noricarter/KernRadioApp/archive/refs/heads/main.zip)
+and choose **Extract All**. Open the extracted `KernRadioApp-main` folder and
+double-click **Start Kern Radio.bat**. That launcher installs uv, Codex CLI,
+Python 3.13, and the app packages as needed, then starts Kern Radio. Git and a
+separate Python installation are not needed. The first setup can take several
+minutes and requires an internet connection. Keep the black window open while
+the station is running; press **Ctrl+C** there to stop it. The app opens a
+browser window. Choose **Connect ChatGPT** and sign in when asked.
 
-```powershell
-powershell.exe -NoExit -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 | iex"
-powershell.exe -NoExit -ExecutionPolicy Bypass -Command "irm https://chatgpt.com/codex/install.ps1 | iex"
-```
+If Windows asks whether to allow the app to run, choose **Run anyway** only if
+you downloaded the ZIP from this Kern Radio GitHub repository. The launcher
+downloads uv and Codex CLI installers from their official providers. If setup
+fails, it leaves the window open and displays the error instead of closing.
 
-Run one command at a time. Wait for the installer to finish and return to a
-PowerShell prompt before running the next one. `irm` downloads the installer
-from the project's official website, and `iex` runs it. The uv installer is
-provided by Astral at `astral.sh`; Codex CLI is provided by OpenAI. If the Codex
-installer reports that a release download failed, its official fallback is to
-use GitHub Releases:
+On macOS or Linux, install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+and the [Codex CLI](https://github.com/openai/codex#quickstart) using their
+official instructions. Git is required for this setup route. Then run:
 
-```powershell
-$env:CODEX_INSTALLER_USE_RELEASES_OPENAI_COM = 'false'
-powershell.exe -NoExit -ExecutionPolicy Bypass -Command "$env:CODEX_INSTALLER_USE_RELEASES_OPENAI_COM='false'; irm https://chatgpt.com/codex/install.ps1 | iex"
-```
-
-In the PowerShell window where each installer returned to a prompt, check that
-the commands are available:
-
-```powershell
-uv --version
-codex --version
-```
-
-If either command is not recognized, close Windows Terminal, open a new
-PowerShell tab, and run the version checks again so Windows reloads the updated
-PATH. If an installer exits or prints an error, keep the window open and copy
-the error before continuing.
-
-Install [Git for Windows](https://git-scm.com/download/win) too if `git` is not
-already available. Then clone and start the app:
-
-```powershell
+```bash
 git clone https://github.com/noricarter/KernRadioApp.git
 cd KernRadioApp
 uv python install 3.13
@@ -61,22 +40,9 @@ codex --version
 uv run main.py
 ```
 
-On macOS or Linux, install [uv](https://docs.astral.sh/uv/getting-started/installation/)
-and the [Codex CLI](https://github.com/openai/codex#quickstart) using their
-official instructions, then run:
-
-```bash
-git clone <repository-url>
-cd KernRadioApp
-uv python install 3.13
-uv sync --locked
-codex --version
-uv run main.py
-```
-
-Replace `<repository-url>` with the handoff repository URL. `uv sync --locked`
-creates the project environment and installs the exact dependencies recorded in
-`uv.lock`; it fails if the lockfile and `pyproject.toml` disagree. `uv run main.py`
+`uv sync --locked` creates the project environment and installs the exact
+dependencies recorded in `uv.lock`; it fails if the lockfile and `pyproject.toml`
+disagree. `uv run main.py`
 also synchronizes the environment, so the explicit sync step is useful as an
 early install check and can be skipped for the shortest launch:
 
@@ -100,14 +66,14 @@ work, but playback cannot open its audio player. `uv sync` installs Python
 dependencies; the SQLite database file and its tables are created automatically
 when the app first starts. No separate database server or manual schema step is
 needed. Settings, catalog, workspace, artwork, and logs go under
-`~/.config/kernradio` on Linux/macOS or the directory in `XDG_CONFIG_HOME` when set.
+`%LOCALAPPDATA%\kernradio` on Windows, `~/.config/kernradio` on Linux/macOS, or
+the directory in `XDG_CONFIG_HOME` when set.
 
 The clean install and launch were exercised on Ubuntu 24.04 x86_64 with Python
-3.13, including a fresh uv environment and empty app data directory. Windows
-and macOS have not yet been exercised end to end. Codex connection is a separate
-step from installing uv and the Python packages: Kern Radio starts Codex CLI as
-a local helper process. When launched from PowerShell, keep that terminal open;
-startup errors from the helper are shown there and written to the app error log.
+3.13, including a fresh uv environment and empty app data directory. The Windows
+one-click launcher has not yet been exercised on a Windows machine. Kern Radio
+starts Codex CLI as a local helper process; its startup errors appear in the
+launcher window and are written to the app error log.
 
 The service listens only on this computer. It uses port 5000 when available and
 automatically selects a free loopback port when that port is occupied; use the

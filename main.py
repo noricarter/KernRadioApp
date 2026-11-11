@@ -2,6 +2,7 @@
 import os
 import signal
 import logging
+import webbrowser
 from pathlib import Path
 
 from radio.controller import ApplicationController
@@ -33,7 +34,13 @@ def main():
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, stop_requested)
-    data = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'kernradio'
+    if os.environ.get('XDG_CONFIG_HOME'):
+        config_root = Path(os.environ['XDG_CONFIG_HOME'])
+    elif os.name == 'nt':
+        config_root = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))
+    else:
+        config_root = Path.home() / '.config'
+    data = config_root / 'kernradio'
     controller = None
     web = None
     playback = None
@@ -65,6 +72,8 @@ def main():
         web.start()
         audio_backend.set_display_url(web.url + '/listen/')
         print(f'Kern Radio is ready. Open {web.url} in your browser.', flush=True)
+        if os.environ.get('KERNRADIO_OPEN_BROWSER') == '1':
+            webbrowser.open(web.url)
         print('Press Ctrl+C to stop.', flush=True)
         web.wait()
     except KeyboardInterrupt:

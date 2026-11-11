@@ -1,0 +1,54 @@
+name: Windows fresh install
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  install-and-start:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install prerequisites and app packages using the Windows launcher
+        shell: powershell
+        run: .\install-windows.ps1 -PrepareOnly
+      - name: Start the app and verify its Codex connection and database
+        shell: powershell
+        env:
+          XDG_CONFIG_HOME: ${{ runner.temp }}\kernradio-smoke
+          CODEX_HOME: ${{ runner.temp }}\kernradio-codex
+        run: |
+          $uv = (Get-Command uv -ErrorAction Stop).Source
+          $process = Start-Process -FilePath $uv -ArgumentList @('run', 'main.py') -WorkingDirectory $PWD -PassThru
+          try {
+            $connected = $false
+            for ($attempt = 0; $attempt -lt 90; $attempt++) {
+              if ($process.HasExited) {
+                throw "Kern Radio exited during startup with code $($process.ExitCode)."
+              }
+              try {
+                $status = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/api/status' -TimeoutSec 3
+                if ($status.connected -eq $true -and $status.authenticated -eq $false) {
+                  $connected = $true
+                  break
+                }
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            if (-not $connected) {
+              throw 'Kern Radio did not connect to the Codex CLI app server within 90 seconds.'
+            }
+            $database = Join-Path $env:XDG_CONFIG_HOME 'kernradio\catalog.sqlite3'
+            if (-not (Test-Path -LiteralPath $database -PathType Leaf)) {
+              throw 'Kern Radio did not create its SQLite database on startup.'
+            }
+            Write-Host 'PASS: Windows install, app startup, Codex helper connection, and SQLite creation.'
+          }
+          finally {
+            if (-not $process.HasExited) {
+              & taskkill.exe /PID $process.Id /T /F | Out-Null
+            }
+          }
