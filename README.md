@@ -13,38 +13,51 @@ The application requires Git, uv, and the official Codex CLI (`codex` must be
 on PATH). uv can install the required Python 3.13 runtime, so a separate Python
 installation is optional. The Codex integration was verified with CLI 0.166.0.
 
-On Windows, open a terminal window with a PowerShell session (for example,
-Windows Terminal using its PowerShell profile). These two commands install the
-tools Kern Radio needs: the first installs **uv**, Astral's tool for preparing
-Python and the app's packages; the second installs OpenAI's **Codex CLI**, which
-connects the app to ChatGPT. `astral.sh` is Astral's official download site for
-uv. Paste each line into the terminal and press Enter:
+On Windows, open **Windows Terminal** and choose its **PowerShell** tab. Keep
+that window open while installing: the installer can close a PowerShell session
+if it encounters an error. These commands run the installers in a child
+PowerShell window that stays open and returns to a prompt, so an error remains
+visible:
 
 ```powershell
-irm https://astral.sh/uv/install.ps1 | iex
-irm https://chatgpt.com/codex/install.ps1 | iex
+powershell.exe -NoExit -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 | iex"
+powershell.exe -NoExit -ExecutionPolicy Bypass -Command "irm https://chatgpt.com/codex/install.ps1 | iex"
 ```
 
-In these commands, `irm` downloads the installer from the named project's
-official website, and `iex` runs that installer. Wait for the first command to
-finish before entering the second one.
+Run one command at a time. Wait for the installer to finish and return to a
+PowerShell prompt before running the next one. `irm` downloads the installer
+from the project's official website, and `iex` runs it. The uv installer is
+provided by Astral at `astral.sh`; Codex CLI is provided by OpenAI. If the Codex
+installer reports that a release download failed, its official fallback is to
+use GitHub Releases:
 
-Close that PowerShell window, open a new one so its PATH includes the installed
-commands, then verify they are available:
+```powershell
+$env:CODEX_INSTALLER_USE_RELEASES_OPENAI_COM = 'false'
+powershell.exe -NoExit -ExecutionPolicy Bypass -Command "$env:CODEX_INSTALLER_USE_RELEASES_OPENAI_COM='false'; irm https://chatgpt.com/codex/install.ps1 | iex"
+```
+
+In the PowerShell window where each installer returned to a prompt, check that
+the commands are available:
 
 ```powershell
 uv --version
 codex --version
 ```
 
+If either command is not recognized, close Windows Terminal, open a new
+PowerShell tab, and run the version checks again so Windows reloads the updated
+PATH. If an installer exits or prints an error, keep the window open and copy
+the error before continuing.
+
 Install [Git for Windows](https://git-scm.com/download/win) too if `git` is not
 already available. Then clone and start the app:
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/noricarter/KernRadioApp.git
 cd KernRadioApp
 uv python install 3.13
 uv sync --locked
+codex --version
 uv run main.py
 ```
 
@@ -90,12 +103,11 @@ needed. Settings, catalog, workspace, artwork, and logs go under
 `~/.config/kernradio` on Linux/macOS or the directory in `XDG_CONFIG_HOME` when set.
 
 The clean install and launch were exercised on Ubuntu 24.04 x86_64 with Python
-3.13, including a fresh uv environment and empty app data directory. macOS and
-Windows are intended to work with the paths above but have not been exercised
-for this handoff; Linux is the verified platform. Codex CLI provides separate
-standalone installers for macOS/Linux and Windows in its official installation
-instructions. The Windows command is run in PowerShell; the other commands can
-be run in Terminal or a Linux shell.
+3.13, including a fresh uv environment and empty app data directory. Windows
+and macOS have not yet been exercised end to end. Codex connection is a separate
+step from installing uv and the Python packages: Kern Radio starts Codex CLI as
+a local helper process. When launched from PowerShell, keep that terminal open;
+startup errors from the helper are shown there and written to the app error log.
 
 The service listens only on this computer. It uses port 5000 when available and
 automatically selects a free loopback port when that port is occupied; use the

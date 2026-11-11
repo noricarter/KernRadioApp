@@ -32,6 +32,7 @@ class ApplicationController:
             self.codex.start()
         except CodexError as exc:
             self._error = str(exc)
+            logging.getLogger(__name__).exception('Could not start the Codex helper process.')
 
     def status(self):
         with self._lock:

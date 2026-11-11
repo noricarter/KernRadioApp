@@ -31,7 +31,10 @@ class AppServerTransport:
         try:
             self._process = subprocess.Popen(
                 self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL, text=True, encoding='utf-8',
+                # Keep helper diagnostics visible in the terminal that launched
+                # Kern Radio. This is especially useful when the CLI fails to
+                # start on a fresh Windows installation.
+                stderr=None, text=True, encoding='utf-8',
                 env=self.env, cwd=self.cwd, bufsize=1,
             )
         except OSError as exc:
