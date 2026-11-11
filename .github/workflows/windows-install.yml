@@ -21,7 +21,9 @@ jobs:
           CODEX_HOME: ${{ runner.temp }}\kernradio-codex
         run: |
           $uv = (Get-Command uv -ErrorAction Stop).Source
-          $process = Start-Process -FilePath $uv -ArgumentList @('run', 'main.py') -WorkingDirectory $PWD -PassThru
+          $stdout = Join-Path $env:RUNNER_TEMP 'kernradio-app.stdout.log'
+          $stderr = Join-Path $env:RUNNER_TEMP 'kernradio-app.stderr.log'
+          $process = Start-Process -FilePath $uv -ArgumentList @('run', 'main.py') -WorkingDirectory $PWD -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             $connected = $false
             for ($attempt = 0; $attempt -lt 90; $attempt++) {
@@ -35,10 +37,17 @@ jobs:
                   break
                 }
               } catch {
-                Start-Sleep -Seconds 1
               }
+              Start-Sleep -Seconds 1
             }
             if (-not $connected) {
+              Write-Host 'Kern Radio stdout:'
+              if (Test-Path $stdout) { Get-Content $stdout }
+              Write-Host 'Kern Radio stderr:'
+              if (Test-Path $stderr) { Get-Content $stderr }
+              $errorLog = Join-Path $env:XDG_CONFIG_HOME 'kernradio\logs\errors.log'
+              Write-Host 'Kern Radio error log:'
+              if (Test-Path $errorLog) { Get-Content $errorLog }
               throw 'Kern Radio did not connect to the Codex CLI app server within 90 seconds.'
             }
             $database = Join-Path $env:XDG_CONFIG_HOME 'kernradio\catalog.sqlite3'
