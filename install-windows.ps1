@@ -81,7 +81,7 @@ try {
 
     if ($PrepareOnly) {
         Write-Host "`nKern Radio dependencies are ready." -ForegroundColor Green
-        exit 0
+        return
     }
 
     Write-Host "`nStarting Kern Radio. Keep this window open; press Ctrl+C here to stop." -ForegroundColor Green

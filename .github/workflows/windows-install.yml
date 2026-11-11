@@ -11,15 +11,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Install prerequisites and app packages using the Windows launcher
-        shell: powershell
-        run: .\install-windows.ps1 -PrepareOnly
-      - name: Start the app and verify its Codex connection and database
+      - name: Install prerequisites, start the app, and verify Codex and SQLite
         shell: powershell
         env:
           XDG_CONFIG_HOME: ${{ runner.temp }}\kernradio-smoke
           CODEX_HOME: ${{ runner.temp }}\kernradio-codex
         run: |
+          . .\install-windows.ps1 -PrepareOnly
           $uv = (Get-Command uv -ErrorAction Stop).Source
           $stdout = Join-Path $env:RUNNER_TEMP 'kernradio-app.stdout.log'
           $stderr = Join-Path $env:RUNNER_TEMP 'kernradio-app.stderr.log'
