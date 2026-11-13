@@ -1,9 +1,22 @@
 """Newline-delimited JSON RPC transport for a single managed child process."""
 import json
+import os
 import queue
+import shutil
 import subprocess
 from contextlib import contextmanager
 from threading import Lock, Thread
+
+
+def _prepare_command(command, *, windows=None):
+    """Launch Windows .cmd/.bat CLI shims through cmd.exe's shell."""
+    if windows is None:
+        windows = os.name == 'nt'
+    if windows:
+        executable = shutil.which(command[0]) or command[0]
+        if executable.lower().endswith(('.cmd', '.bat')):
+            return subprocess.list2cmdline([executable, *command[1:]]), True
+    return command, False
 
 
 class CodexError(Exception):
@@ -29,13 +42,14 @@ class AppServerTransport:
         if self.connected:
             return
         try:
+            command, use_shell = _prepare_command(self.command)
             self._process = subprocess.Popen(
-                self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 # Keep helper diagnostics visible in the terminal that launched
                 # Kern Radio. This is especially useful when the CLI fails to
                 # start on a fresh Windows installation.
                 stderr=None, text=True, encoding='utf-8',
-                env=self.env, cwd=self.cwd, bufsize=1,
+                env=self.env, cwd=self.cwd, bufsize=1, shell=use_shell,
             )
         except OSError as exc:
             raise CodexError('The connection helper could not start. Install Codex CLI and try again.') from exc

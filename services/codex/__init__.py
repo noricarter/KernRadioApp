@@ -2,6 +2,7 @@
 import os
 import json
 import queue
+import shutil
 import time
 from pathlib import Path
 from threading import Lock
@@ -15,7 +16,14 @@ class CodexService:
     def __init__(self, workspace: Path, *, codex_home: Path | None = None, executable='codex'):
         workspace.mkdir(parents=True, exist_ok=True)
         env = os.environ.copy()
+        # The Windows installer puts the native CLI here. IDE terminals can
+        # inherit a PATH containing a JavaScript shim named `codex` instead.
+        if os.name == 'nt' and executable == 'codex':
+            native_cli = Path(os.environ.get('LOCALAPPDATA', '')) / 'Programs' / 'OpenAI' / 'Codex' / 'bin' / 'codex.exe'
+            executable = str(native_cli) if native_cli.is_file() else (shutil.which('codex.exe') or executable)
         if codex_home is not None:
+            codex_home = Path(codex_home).expanduser()
+            codex_home.mkdir(parents=True, exist_ok=True)
             env['CODEX_HOME'] = str(codex_home)
         self.workspace = workspace.resolve()
         self._transport = AppServerTransport(

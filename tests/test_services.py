@@ -10,7 +10,7 @@ from concurrent.futures import Future
 from radio.controller import ApplicationController
 from radio.web import create_app
 from services.codex import CodexError, CodexService
-from services.codex.transport import AppServerTransport
+from services.codex.transport import AppServerTransport, _prepare_command
 from services.configuration import ConfigurationError, ConfigurationService
 from services.web import FlaskWebService
 from urllib.request import urlopen
@@ -45,6 +45,20 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
+    def test_windows_batch_cli_is_quoted_for_shell_launch(self):
+        command, use_shell = _prepare_command(
+            [r'C:\Program Files\Codex\codex.CMD', 'app-server', '--listen', 'stdio://'],
+            windows=True,
+        )
+        self.assertTrue(use_shell)
+        self.assertEqual(command, r'"C:\Program Files\Codex\codex.CMD" app-server --listen stdio://')
+
+    def test_native_cli_does_not_use_shell(self):
+        command = [r'C:\Program Files\Codex\codex.exe', 'app-server']
+        prepared, use_shell = _prepare_command(command, windows=True)
+        self.assertFalse(use_shell)
+        self.assertEqual(prepared, command)
+
     def setUp(self):
         self.transport = AppServerTransport([sys.executable, str(Path(__file__).with_name('fake_app_server.py'))])
         self.transport.start()

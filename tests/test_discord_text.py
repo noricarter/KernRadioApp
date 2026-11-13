@@ -44,7 +44,7 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(result.submissions[0].original_suno_url, 'https://suno.com/s/shortlink')
 
     def test_actual_crucible_posts_inline_labels_authors_and_embeds(self):
-        text = (Path(__file__).parent / 'fixtures/crucible_posts.txt').read_text()
+        text = (Path(__file__).parent / 'fixtures/crucible_posts.txt').read_text(encoding='utf-8')
         result = self.parser.parse(text)
         self.assertEqual(result.unresolved, [])
         self.assertEqual([s.discord_handle for s in result.submissions],
@@ -79,7 +79,7 @@ class ParserTests(unittest.TestCase):
         self.assertIn('boundaries', result.unresolved[0].reason)
 
     def test_actual_grouped_posts_split_before_previews_and_preserve_attribution(self):
-        text = (Path(__file__).parent / 'fixtures/crucible_grouped_posts.txt').read_text()
+        text = (Path(__file__).parent / 'fixtures/crucible_grouped_posts.txt').read_text(encoding='utf-8')
         parsed = self.parser.parse(text)
         self.assertEqual(len(parsed.submissions), 7)
         self.assertEqual(parsed.unresolved, [])
@@ -98,7 +98,7 @@ class ParserTests(unittest.TestCase):
         self.assertIn('P̵A͏G̀E̶', parsed.submissions[-2].submitted_title)
 
     def test_observed_song_labels_and_warning_icon_keep_their_fields(self):
-        text = (Path(__file__).parent / 'fixtures/crucible_grouped_posts.txt').read_text()
+        text = (Path(__file__).parent / 'fixtures/crucible_grouped_posts.txt').read_text(encoding='utf-8')
         grandpa = self.parser.parse(text).submissions[3]
         self.assertTrue(grandpa.description.startswith('First Night'))
         self.assertIn('The song captures', grandpa.description)
@@ -120,7 +120,7 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(len(self.parser.parse(text).unresolved), 1)
 
     def test_actual_relative_and_explicit_dates_and_clean_artist_names(self):
-        text = (Path(__file__).parent / 'fixtures/crucible_dated_posts.txt').read_text()
+        text = (Path(__file__).parent / 'fixtures/crucible_dated_posts.txt').read_text(encoding='utf-8')
         reference = datetime(2026, 11, 8, 0, 5, tzinfo=ZoneInfo('America/Phoenix'))
         result = self.parser.parse(text, reference_time=reference)
         self.assertEqual(result.unresolved, [])

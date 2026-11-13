@@ -60,7 +60,7 @@ def main():
         programming = RadioProgramming(catalog, playback, DialogueService(), metrics=metrics,
             request_agent=lambda text: controller.station_task(text), open_frontend=audio_backend.open_display)
         station_tools = StationTools(information, policies, configuration, programming=programming)
-        controller = ApplicationController(configuration, CodexService(data / 'workspace'),
+        controller = ApplicationController(configuration, CodexService(data / 'workspace', codex_home=data / 'codex'),
             station_tools=station_tools, policies=policies)
         metadata = SunoMetadataService()
         artwork = ArtworkService(data / 'artwork')

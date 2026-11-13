@@ -4,6 +4,13 @@ import {CatalogEditor} from './catalog.js';
 
 let state = null, polling = false, importing = false, sending = false, connecting = false, programmingAction = false, queueAction = false, pendingQueueSong = null, queueFeedback = null, nowPlayingId = null;
 const editor = new CatalogEditor(refresh);
+const policyReview = $('step-policy-review') || document.createElement('button');
+policyReview.id = 'step-policy-review';
+policyReview.type = 'button';
+policyReview.className = 'text-button';
+policyReview.textContent = 'Review policy proposals';
+policyReview.hidden = true;
+if (!policyReview.isConnected) $('step-action').after(policyReview);
 const stepContent = {
   connection: ['Connect your host', 'Connect your ChatGPT account to talk with your radio host. Sign in on the official page, then return here.', 'Connect ChatGPT'],
   music: ['Import your music', 'Your host is connected. Next, let’s collect some songs from the community. Paste the copied Discord posts and we’ll check them together.', 'Import community music'],
@@ -21,7 +28,8 @@ function busyState() {
   const program = state?.station?.programming;
   const queueEnabled = !!program?.running && !program.stop_requested && !state?.busy && !queueAction;
   document.querySelectorAll('#queue-song-next, #queue-song-append').forEach(button => { button.disabled = !queueEnabled; });
-  const feedback = queueFeedback?.id === editor.selected?.song.suno_song_id ? queueFeedback.text : null;
+  const feedback = queueFeedback && editor.selected
+    && queueFeedback.id === editor.selected.song.suno_song_id ? queueFeedback.text : null;
   $('queue-song-status').textContent = queueAction ? 'Sending your request to the host…'
     : feedback || (program?.stop_requested ? 'The station is signing off. Start a new program to queue songs.'
     : state?.busy ? 'Your host is busy. Wait for the current response to finish.'
@@ -42,6 +50,7 @@ function renderContext(station) {
   $('onboarding').hidden = station.onboarding.complete;
   $('station-panels').hidden = !station.onboarding.complete;
   const current = station.onboarding.current;
+  $('step-policy-review').hidden = current !== 'policies';
   $('setup-steps').replaceChildren(...station.onboarding.steps.map((step, index) => {
     const item = node('li', null, step.complete ? 'done' : step.id === current ? 'current' : '');
     item.append(node('span', step.complete ? '✓' : index + 1, 'step-marker'), node('span', step.title));
@@ -210,6 +219,7 @@ async function queueCatalogSong(position) {
 $('queue-song-next').addEventListener('click', () => queueCatalogSong('next'));
 $('queue-song-append').addEventListener('click', () => queueCatalogSong('append'));
 $('open-policies').addEventListener('click', () => openDialog('policies-dialog'));
+$('step-policy-review').addEventListener('click', () => openDialog('policies-dialog'));
 $('add-policy').addEventListener('click', discussNewPolicy);
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
 $('composer').addEventListener('submit', async event => {

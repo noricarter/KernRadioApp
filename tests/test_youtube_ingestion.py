@@ -53,7 +53,7 @@ class YouTubeIngestionTests(TestCase):
         self.assertEqual(clean_role_names(self.catalog), [])
 
     def test_actual_youtube_post_preserves_available_fields_without_suno_lookup(self):
-        text = Path('tests/fixtures/crucible_grouped_posts.txt').read_text()
+        text = Path('tests/fixtures/crucible_grouped_posts.txt').read_text(encoding='utf-8')
         post = next(post for post in self.parser.parse(text).submissions if post.source == 'youtube')
         result = self.ingestion.import_text(post.original_message)
         self.assertEqual(result['counts'], {'added': 1, 'existing': 0, 'failed': 0})

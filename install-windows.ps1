@@ -68,6 +68,10 @@ try {
             $env:Path = "$bin;$env:Path"
         }
     }
+    $codexBin = Join-Path $env:LOCALAPPDATA 'Programs\OpenAI\Codex\bin'
+    if (Test-Path -LiteralPath (Join-Path $codexBin 'codex.exe') -PathType Leaf) {
+        $env:Path = "$codexBin;$env:Path"
+    }
 
     $uv = Get-Command uv -ErrorAction SilentlyContinue
     $codex = Get-Command codex -ErrorAction SilentlyContinue
@@ -86,7 +90,10 @@ try {
 
     Write-Host "`nStarting Kern Radio. Keep this window open; press Ctrl+C here to stop." -ForegroundColor Green
     $env:KERNRADIO_OPEN_BROWSER = '1'
-    Invoke-Native $uv.Source @('run', 'main.py') 'Kern Radio stopped with an error.'
+    $python = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
+    if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'The project Python environment was not created.' }
+    & $python 'main.py'
+    if ($LASTEXITCODE -ne 0) { throw 'Kern Radio stopped with an error.' }
 }
 catch {
     Write-Host "`nKern Radio could not start:`n$($_.Exception.Message)" -ForegroundColor Red
