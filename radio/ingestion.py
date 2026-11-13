@@ -30,13 +30,13 @@ class MusicIngestion:
     def _import(self, text, *, progress=None):
         parsed = self.parser.parse(text, reference_time=self._clock())
         total = len(parsed.unresolved) + len(parsed.submissions)
-        completed = 0
+        completed_entries = 0
 
         def report(stage, current='', advance=0):
-            nonlocal completed
-            completed = min(total, completed + advance)
+            nonlocal completed_entries
+            completed_entries = min(total, completed_entries + advance)
             if progress is not None:
-                progress({'stage': stage, 'current': str(current)[:160], 'completed': completed, 'total': total})
+                progress({'stage': stage, 'current': str(current)[:160], 'completed': completed_entries, 'total': total})
 
         report('ready', 'Preparing entries')
         batch = self.catalog.create_batch(source_text=text)
@@ -142,9 +142,9 @@ class MusicIngestion:
             results.append({'outcome': outcome, 'source': 'youtube', 'youtube_video_id': video_id,
                 'suno_song_id': None, 'title': track['title'], 'error': None, 'warnings': [], 'missing_metadata': []})
             report('saved', track['title'] or 'YouTube submission', len(posts))
-        completed = self.catalog.finish_batch(batch['id'])
+        batch_summary = self.catalog.finish_batch(batch['id'])
         report('complete', 'Import complete')
-        return {'batch_id': batch['id'], 'counts': completed['counts'], 'entries': results}
+        return {'batch_id': batch['id'], 'counts': batch_summary['counts'], 'entries': results}
 
     def _default_artist(self, post):
         artist = (self.catalog.resolve_artist_alias(post.discord_handle)
