@@ -53,7 +53,7 @@ jobs:
               throw 'Kern Radio did not create its SQLite database on startup.'
             }
 
-            $page = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/' -TimeoutSec 10
+            $page = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:5000/' -TimeoutSec 10
             $tokenMatch = [regex]::Match($page.Content, 'name="app-token" content="([^"]+)"')
             if (-not $tokenMatch.Success) {
               throw 'Kern Radio did not provide its local import request token.'
