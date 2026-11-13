@@ -52,7 +52,26 @@ jobs:
             if (-not (Test-Path -LiteralPath $database -PathType Leaf)) {
               throw 'Kern Radio did not create its SQLite database on startup.'
             }
-            Write-Host 'PASS: Windows install, app startup, Codex helper connection, and SQLite creation.'
+
+            $page = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/' -TimeoutSec 10
+            $tokenMatch = [regex]::Match($page.Content, 'name="app-token" content="([^"]+)"')
+            if (-not $tokenMatch.Success) {
+              throw 'Kern Radio did not provide its local import request token.'
+            }
+            $fixturePath = Join-Path $PWD 'tests\fixtures\crucible_posts.txt'
+            $fixture = [IO.File]::ReadAllText($fixturePath, [Text.Encoding]::UTF8)
+            $payload = ConvertTo-Json -InputObject @{ text = $fixture } -Compress
+            $body = [Text.Encoding]::UTF8.GetBytes($payload)
+            $headers = @{ 'X-App-Token' = $tokenMatch.Groups[1].Value }
+            $import = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/api/import' -Method Post -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $body -TimeoutSec 300
+            if ($import.counts.added -ne 4 -or $import.counts.failed -ne 0) {
+              throw "Windows import smoke failed: $($import.counts.added) added, $($import.counts.failed) failed."
+            }
+            $repeat = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/api/import' -Method Post -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $body -TimeoutSec 300
+            if ($repeat.counts.existing -ne 4 -or $repeat.counts.failed -ne 0) {
+              throw 'Windows import retry did not recognize all four songs as existing.'
+            }
+            Write-Host 'PASS: Windows install, Codex connection, SQLite creation, live four-song import, and idempotent retry.'
           }
           finally {
             if (-not $process.HasExited) {
