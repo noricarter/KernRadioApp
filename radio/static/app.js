@@ -36,6 +36,33 @@ function busyState() {
     : program?.running ? 'The host will prepare a brief introduction and outro.'
     : 'Start Programming to add songs to the live queue.');
 }
+
+const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+async function runImport(text) {
+  const startedAt = Date.now();
+  const {job_id} = await api('/api/import/jobs', {text});
+  while (true) {
+    await pause(750);
+    const job = await api('/api/import/jobs/' + encodeURIComponent(job_id));
+    if (job.status === 'failed') throw new Error('Import stopped: ' + job.error);
+    if (job.status === 'completed') return job.result;
+
+    const progress = $('import-progress');
+    progress.hidden = false;
+    progress.value = job.total ? Math.floor(job.completed * 100 / job.total) : 0;
+    const stages = {
+      starting: 'Starting import', ready: 'Reading copied posts', review: 'Checking an entry',
+      resolving: 'Resolving a Suno share link', metadata: 'Fetching song details from Suno',
+      artwork: 'Saving song artwork', saved: 'Saving song to your catalog', failed: 'Recording a failed entry'
+    };
+    const current = job.current ? ' · ' + job.current : '';
+    const count = job.total ? ` (${job.completed} of ${job.total} entries)` : '';
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    $('import-status').textContent = (stages[job.stage] || 'Importing') + count + current
+      + `. ${elapsed}s elapsed; a song can take up to a minute if Suno is slow.`;
+  }
+}
+
 function renderContext(station) {
   if (!station) return;
   $('station-status').textContent = 'Station: ' + station.station_status;
@@ -222,6 +249,7 @@ $('open-policies').addEventListener('click', () => openDialog('policies-dialog')
 $('step-policy-review').addEventListener('click', () => openDialog('policies-dialog'));
 $('add-policy').addEventListener('click', discussNewPolicy);
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
+$('import-dialog').addEventListener('cancel', event => { if (importing) event.preventDefault(); });
 $('composer').addEventListener('submit', async event => {
   event.preventDefault(); if (sending || state?.busy) return;
   sending = true; $('error').textContent = ''; busyState();
@@ -234,12 +262,26 @@ $('message').addEventListener('keydown', event => {
 });
 $('import-form').addEventListener('submit', async event => {
   event.preventDefault(); if (importing) return;
-  importing = true; $('import-button').disabled = true; $('import-status').textContent = 'Importing… Please leave this page open.'; busyState();
+  importing = true; $('import-button').disabled = true; $('cancel-import').disabled = true;
+  document.querySelectorAll('[data-close="import-dialog"]').forEach(button => { button.disabled = true; });
+  $('import-progress').hidden = false; $('import-progress').value = 0;
+  $('import-status').classList.remove('error'); $('import-status').textContent = 'Starting import…'; busyState();
   try {
-    const result = await api('/api/import', {text: $('discord-text').value});
+    const result = await runImport($('discord-text').value);
     renderImport(result); $('import-dialog').close(); $('import-status').textContent = '';
-    notify('Import finished. Review the results in your conversation.'); await refresh(); scrollConversation();
-  } catch (error) { $('import-status').textContent = error.message; }
-  finally { importing = false; $('import-button').disabled = false; busyState(); }
+    $('import-progress').hidden = true;
+    notify(result.counts.failed
+      ? `Import finished: ${result.counts.added} imported, ${result.counts.failed} need attention. See the reasons in the conversation.`
+      : 'Import finished. Review the results in the conversation.');
+    await refresh(); scrollConversation();
+  } catch (error) {
+    $('import-status').classList.add('error');
+    $('import-status').textContent = error.message || 'Import failed. Please try again.';
+  }
+  finally {
+    importing = false; $('import-button').disabled = false; $('cancel-import').disabled = false;
+    document.querySelectorAll('[data-close="import-dialog"]').forEach(button => { button.disabled = false; });
+    busyState();
+  }
 });
 refresh(); setInterval(refresh, 1800);

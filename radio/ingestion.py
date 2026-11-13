@@ -15,7 +15,7 @@ class MusicIngestion:
         self._clock = clock or datetime.now
         self.artwork = artwork
 
-    def import_text(self, text):
+    def import_text(self, text, *, progress=None):
         if not isinstance(text, str) or not text.strip():
             raise ValueError('Paste some Discord messages first.')
         if len(text) > 100_000:
@@ -23,20 +23,35 @@ class MusicIngestion:
         if not self._lock.acquire(blocking=False):
             raise ValueError('An import is already running. Please wait for it to finish.')
         try:
-            return self._import(text)
+            return self._import(text, progress=progress)
         finally:
             self._lock.release()
 
-    def _import(self, text):
+    def _import(self, text, *, progress=None):
         parsed = self.parser.parse(text, reference_time=self._clock())
+        total = len(parsed.unresolved) + len(parsed.submissions)
+        completed = 0
+
+        def report(stage, current='', advance=0):
+            nonlocal completed
+            completed = min(total, completed + advance)
+            if progress is not None:
+                progress({'stage': stage, 'current': str(current)[:160], 'completed': completed, 'total': total})
+
+        report('ready', 'Preparing entries')
         batch = self.catalog.create_batch(source_text=text)
         results = []
         for entry in parsed.unresolved:
             self.catalog.record_batch_item(batch['id'], outcome='failed', source_text=entry.source_text, error=entry.reason)
             results.append({'outcome': 'failed', 'suno_song_id': None, 'title': None,
                             'error': entry.reason, 'source_text': entry.source_text})
+            report('review', entry.reason, 1)
         grouped = defaultdict(list)
         resolved_urls = {}
+        unresolved_share_counts = defaultdict(int)
+        for submission in parsed.submissions:
+            if submission.source == 'suno' and submission.suno_song_id is None:
+                unresolved_share_counts[submission.original_suno_url] += 1
         youtube = defaultdict(list)
         for submission in parsed.submissions:
             if submission.source == 'youtube':
@@ -48,6 +63,7 @@ class MusicIngestion:
                 if url not in resolved_urls:
                     existing = self.catalog.get_song_by_url(url)
                     try:
+                        report('resolving', submission.submitted_title or 'Suno share link')
                         resolved_urls[url] = existing['suno_song_id'] if existing else self.metadata.resolve_song_id(url)
                     except SunoMetadataError as exc:
                         resolved_urls[url] = None
@@ -56,6 +72,7 @@ class MusicIngestion:
                         results.append({'outcome': 'failed', 'suno_song_id': None,
                             'title': submission.submitted_title, 'error': str(exc),
                             'source_text': submission.original_message})
+                        report('failed', submission.submitted_title or 'Suno share link', unresolved_share_counts[url])
                 song_id = resolved_urls[url]
             if song_id is not None:
                 grouped[song_id].append(submission)
@@ -70,6 +87,7 @@ class MusicIngestion:
             outcome, error = 'existing', None
             if song is None:
                 try:
+                    report('metadata', submissions[0].submitted_title or song_id)
                     metadata = self.metadata.fetch_song(song_id)
                     if metadata['suno_song_id'] != song_id:
                         raise SunoMetadataError('The returned metadata did not match the submitted song link.')
@@ -81,6 +99,7 @@ class MusicIngestion:
             warnings = [post.timestamp_error for post in submissions if post.timestamp_error]
             if outcome == 'added' and self.artwork is not None:
                 try:
+                    report('artwork', song['title'] or song_id)
                     song = self.artwork.cache_song(song_id)
                 except ArtworkError as exc:
                     warnings.append(str(exc) + ' The song itself was imported.')
@@ -101,6 +120,8 @@ class MusicIngestion:
                 'error': error, 'warnings': warnings,
                 'missing_metadata': [key for key in ('title', 'lyrics', 'style', 'suno_username')
                                      if song is not None and song[key] is None]})
+            report('saved' if outcome != 'failed' else 'failed',
+                (song['title'] if song else submissions[0].submitted_title) or song_id, len(submissions))
         for video_id, posts in youtube.items():
             first = posts[0]
             try:
@@ -120,7 +141,9 @@ class MusicIngestion:
                 source_text=first.original_message)
             results.append({'outcome': outcome, 'source': 'youtube', 'youtube_video_id': video_id,
                 'suno_song_id': None, 'title': track['title'], 'error': None, 'warnings': [], 'missing_metadata': []})
+            report('saved', track['title'] or 'YouTube submission', len(posts))
         completed = self.catalog.finish_batch(batch['id'])
+        report('complete', 'Import complete')
         return {'batch_id': batch['id'], 'counts': completed['counts'], 'entries': results}
 
     def _default_artist(self, post):

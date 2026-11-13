@@ -1,5 +1,9 @@
 """Thin HTTP adapters and local browser request protection."""
+from concurrent.futures import ThreadPoolExecutor
+import logging
 import secrets
+from threading import Lock
+import uuid
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -14,6 +18,31 @@ def create_app(controller, ingestion=None, management=None):
     app = Flask(__name__, template_folder=str(root / 'templates'), static_folder=str(root / 'static'))
     app.config.update(MAX_CONTENT_LENGTH=700_000, TRUSTED_HOSTS=['127.0.0.1', 'localhost'])
     token = secrets.token_urlsafe(32)
+    import_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='music-import') if ingestion else None
+    import_state_lock = Lock()
+    import_state = {'value': None}
+
+    def import_progress(job_id, progress):
+        with import_state_lock:
+            current = import_state['value']
+            if current and current['job_id'] == job_id and current['status'] == 'running':
+                current.update(progress)
+
+    def run_import(job_id, text):
+        try:
+            result = ingestion.import_text(text, progress=lambda progress: import_progress(job_id, progress))
+        except Exception as exc:
+            logging.getLogger(__name__).exception('Music import failed.')
+            message = str(exc).strip() or f'{type(exc).__name__} (no details were provided)'
+            with import_state_lock:
+                current = import_state['value']
+                if current and current['job_id'] == job_id:
+                    current.update(status='failed', error=message)
+        else:
+            with import_state_lock:
+                current = import_state['value']
+                if current and current['job_id'] == job_id:
+                    current.update(status='completed', stage='complete', current='Import complete', result=result)
 
     @app.before_request
     def protect_local_requests():
@@ -178,6 +207,39 @@ def create_app(controller, ingestion=None, management=None):
         if not isinstance(data, dict):
             raise ValueError('Paste some Discord messages first.')
         return jsonify(ingestion.import_text(data.get('text')))
+
+    @app.post('/api/import/jobs')
+    def start_import_job():
+        if ingestion is None or import_executor is None:
+            return jsonify(error='Music import is not available in this application.'), 503
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise ValueError('Paste some Discord messages first.')
+        text = data.get('text')
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError('Paste some Discord messages first.')
+        if len(text) > 100_000:
+            raise ValueError('Please split these messages into smaller batches of up to 100,000 characters.')
+
+        job_id = uuid.uuid4().hex
+        with import_state_lock:
+            current = import_state['value']
+            if current and current['status'] == 'running':
+                raise ValueError('An import is already running. Its progress is shown here.')
+            import_state['value'] = {
+                'job_id': job_id, 'status': 'running', 'stage': 'starting',
+                'current': 'Starting import', 'completed': 0, 'total': 0,
+            }
+        import_executor.submit(run_import, job_id, text)
+        return jsonify(job_id=job_id), 202
+
+    @app.get('/api/import/jobs/<job_id>')
+    def import_job_status(job_id):
+        with import_state_lock:
+            current = import_state['value']
+            if not current or current['job_id'] != job_id:
+                return jsonify(error='This import is no longer available. Please start it again.'), 404
+            return jsonify(dict(current))
 
     @app.errorhandler(DatabaseError)
     def database_error(exc):

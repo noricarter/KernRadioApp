@@ -92,7 +92,8 @@ export function renderPolicies(policies, busy, onAction, onDiscuss) {
 export function renderImport(result) {
   const card = node('article', null, 'result-card');
   card.dataset.batchId = result.batch_id;
-  card.append(node('div', '♬  Community Music Import · Batch ' + result.batch_id, 'card-top'), node('h3', 'Your import is ready'));
+  card.append(node('div', '♬  Community Music Import · Batch ' + result.batch_id, 'card-top'),
+    node('h3', result.counts.failed ? 'Import finished with entries needing attention' : 'Your import is ready'));
   card.append(node('p', result.counts.added + ' imported · ' + result.counts.existing + ' already in catalog · ' + result.counts.failed + ' unresolved', 'result-summary'));
   const list = node('ul');
   for (const entry of result.entries) {

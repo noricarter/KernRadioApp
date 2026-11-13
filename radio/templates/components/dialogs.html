@@ -1,7 +1,7 @@
 <dialog id="import-dialog" class="gold-frame">
   <div class="dialog-header"><h2>Import community music</h2><button type="button" data-close="import-dialog" class="close-button" aria-label="Close import">×</button></div>
   <p>Copy posts from Crucible’s #ai-music channel and paste them below. We’ll keep the original messages and check for songs already in your catalog.</p>
-  <form id="import-form"><label for="discord-text">Copied Discord messages</label><textarea id="discord-text" rows="9" maxlength="100000" required placeholder="Paste the copied posts, including their names, dates, and Suno links…"></textarea><p id="import-status" role="status"></p><div class="form-actions"><button type="button" data-close="import-dialog">Cancel</button><button id="import-button" type="submit" class="button-green">Import music</button></div></form>
+  <form id="import-form"><label for="discord-text">Copied Discord messages</label><textarea id="discord-text" rows="9" maxlength="100000" required placeholder="Paste the copied posts, including their names, dates, and Suno links…"></textarea><progress id="import-progress" max="100" value="0" hidden></progress><p id="import-status" role="status" aria-live="polite"></p><div class="form-actions"><button id="cancel-import" type="button" data-close="import-dialog">Cancel</button><button id="import-button" type="submit" class="button-green">Import music</button></div></form>
 </dialog>
 <dialog id="policies-dialog" class="gold-frame">
   <div class="dialog-header"><div><h2>Station policies</h2><p class="dialog-subtitle">Your approved policies guide ordinary radio programming.</p></div><button type="button" data-close="policies-dialog" class="close-button" aria-label="Close policies">×</button></div>
